@@ -11,6 +11,7 @@
 #  - PLUGIN_RELEASE   helm release name
 #  - PLUGIN_CONFIGS   config files to be passed to helm chart
 #  - PLUGIN_SETVARS   helm chart variable overrides
+#  - PLUGIN_DRYRUN    just print commands that would be executed
 
 if [ -n "$PLUGIN_PARAMFILE" ]; then
   . $PLUGIN_PARAMFILE
@@ -21,7 +22,13 @@ fi
 : ${PLUGIN_NAMESPACE:?}
 : ${PLUGIN_CHART:?}
 
-upgradecmd="helm upgrade -i --wait ${PLUGIN_RELEASE} --namespace ${PLUGIN_NAMESPACE} ${PLUGIN_CHART}"
+if [ -n "$PLUGIN_DRYRUN" ]; then
+  helmcmd="echo DRYRUN: helm"
+else
+  helmcmd="helm"
+fi
+
+upgradecmd="${helmcmd} upgrade -i --wait ${PLUGIN_RELEASE} --namespace ${PLUGIN_NAMESPACE} ${PLUGIN_CHART}"
 
 if [ -n "$PLUGIN_VERSION" ]; then
   upgradecmd="${upgradecmd} --version ${PLUGIN_VERSION}"
@@ -36,8 +43,8 @@ if [ -n "$PLUGIN_SETVARS" ]; then
 fi
 
 if [ -n "$PLUGIN_REPO_NAME" ] && [ -n "$PLUGIN_REPO_URL" ]; then
-  echo helm repo add ${PLUGIN_REPO_NAME} ${PLUGIN_REPO_URL}
-  echo helm repo update
+  $helmcmd repo add ${PLUGIN_REPO_NAME} ${PLUGIN_REPO_URL}
 fi
 
-echo $upgradecmd
+$helmcmd repo update
+$upgradecmd
